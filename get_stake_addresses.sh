@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source get_program_accounts.sh
+
 # SLP1 RPC Node
 url=http://34.82.79.31:8899
 
@@ -20,6 +22,12 @@ if [[ -f $foundation_address_file ]]; then
   exit 1
 fi
 
+stake_account_data_file=STAKE_account_data.json
+if [[ ! -f $stake_account_data_file ]]; then
+  echo "$stake_account_data_file does not exist.  Querying cluster for data"
+  query_program_account_data STAKE $STAKE_PROGRAM_PUBKEY $url
+fi
+
 # Community pool
 shrill_charity="BzuqQFnu7oNUeok9ZoJezpqu2vZJU7XR1PxVLkk6wwUD"
 legal_gate="FwMbkDZUb78aiMWhZY4BEroAcqmnrXZV77nwrg71C57d"
@@ -30,7 +38,7 @@ one_thanks="3b7akieYUyCgz3Cwt5sTSErMWjg8NEygD6mbGjhGkduB"
 lyrical_supermarket="GRZwoJGisLTszcxtWpeREJ98EGg8pZewhbtcrikoU7b3"
 frequent_description="J51tinoLdmEdUR27LUVymrb2LB3xQo1aSHSgmbSGdj58"
 
-pubkey_list="$(cat STAKE_account_pubkeys)"
+pubkey_list="$(cat $stake_account_data_file | jq -r '.result | .[] | .[0]')"
 
 for key in ${pubkey_list[@]}; do
   staker="$(solana show-stake-account $key | grep staker | cut -f3 -d " ")"
@@ -55,5 +63,4 @@ for key in ${pubkey_list[@]}; do
       echo "frequent_description $key" >> "$foundation_address_file"
       ;;
     esac
-
 done

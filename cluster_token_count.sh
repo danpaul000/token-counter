@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source get_program_accounts.sh
+
 # SLP1 RPC Node
 url=http://34.82.79.31:8899
 
@@ -9,12 +11,6 @@ fi
 
 LAMPORTS_PER_SOL=1000000000 # 1 billion
 TOTAL_ALLOWED_SOL=500000000 # 500 million
-
-STAKE_PROGRAM_PUBKEY=Stake11111111111111111111111111111111111111
-SYSTEM_PROGRAM_PUBKEY=11111111111111111111111111111111
-VOTE_PROGRAM_PUBKEY=Vote111111111111111111111111111111111111111
-STORAGE_PROGRAM_PUBKEY=Storage111111111111111111111111111111111111
-CONFIG_PROGRAM_PUBKEY=Config1111111111111111111111111111111111111
 
 tokenCapitalizationSol=
 tokenCapitalizationLamports=
@@ -50,16 +46,6 @@ function get_token_capitalization {
 
   tokenCapitalizationLamports="$totalSupplyLamports"
   tokenCapitalizationSol="$totalSupplySol"
-}
-
-function query_program_account_data {
-  PROGRAM_NAME="$1"
-  PROGRAM_PUBKEY="$2"
-
-  curl -s -X POST -H "Content-Type: application/json" -d \
-    '{"jsonrpc":"2.0","id":1, "method":"getProgramAccounts", "params":["'$PROGRAM_PUBKEY'"]}' $url | jq \
-    > "${PROGRAM_NAME}_account_data.json"
-
 }
 
 function get_program_account_balance_totals {
@@ -150,11 +136,11 @@ function test_sum_account_balances_capitalization {
 echo "--- Querying RPC URL: $url ---"
 get_cluster_version
 
-query_program_account_data STAKE $STAKE_PROGRAM_PUBKEY
-query_program_account_data SYSTEM $SYSTEM_PROGRAM_PUBKEY
-query_program_account_data VOTE $VOTE_PROGRAM_PUBKEY
-query_program_account_data STORAGE $STORAGE_PROGRAM_PUBKEY
-query_program_account_data CONFIG $CONFIG_PROGRAM_PUBKEY
+query_program_account_data STAKE $STAKE_PROGRAM_PUBKEY $url
+query_program_account_data SYSTEM $SYSTEM_PROGRAM_PUBKEY $url
+query_program_account_data VOTE $VOTE_PROGRAM_PUBKEY $url
+query_program_account_data STORAGE $STORAGE_PROGRAM_PUBKEY $url
+query_program_account_data CONFIG $CONFIG_PROGRAM_PUBKEY $url
 
 create_account_data_csv STAKE
 create_account_data_csv SYSTEM
