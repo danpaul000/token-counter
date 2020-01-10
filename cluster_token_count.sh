@@ -6,7 +6,7 @@ source get_program_accounts.sh
 #url=http://34.82.79.31:8899
 
 # Dan's test Node
-url=http://35.197.48.102:8899
+url=http://34.82.15.82:8899
 
 if [[ -n $1 ]]; then
   url="$1"
@@ -132,11 +132,11 @@ get_program_accounts VOTE $VOTE_PROGRAM_PUBKEY $url
 get_program_accounts STORAGE $STORAGE_PROGRAM_PUBKEY $url
 get_program_accounts CONFIG $CONFIG_PROGRAM_PUBKEY $url
 
-create_account_data_csv STAKE
-create_account_data_csv SYSTEM
-create_account_data_csv VOTE
-create_account_data_csv STORAGE
-create_account_data_csv CONFIG
+write_account_data_csv STAKE
+write_account_data_csv SYSTEM
+write_account_data_csv VOTE
+write_account_data_csv STORAGE
+write_account_data_csv CONFIG
 
 get_token_capitalization #quiet
 
