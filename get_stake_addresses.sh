@@ -1,66 +1,77 @@
 #!/usr/bin/env bash
 
+#set -x
+
 source get_program_accounts.sh
 
 # SLP1 RPC Node
-url=http://34.82.79.31:8899
+#url=http://34.82.79.31:8899
 
-if [[ -n $1 ]]; then
-  url="$1"
-fi
+# Dan's test Node
+url=http://34.82.15.82:8899
 
-community_address_file=community_addresses.txt
-foundation_address_file=foundation_addresses.txt
+usage() {
+  exitcode=0
+  if [[ -n "$1" ]]; then
+    exitcode=1
+    echo "Error: $*"
+  fi
+  cat <<EOF
+usage: $0 [options]
+ options:
+   --url [url]        - RPC URL for a running Solana cluster (default: $url)
+   --pubkey [pubkey]  - Base58 pubkey that is an authorized staker for at least one stake account on the cluster.  Required.
+EOF
+  exit $exitcode
+}
 
-if [[ -f $community_address_file ]]; then
-  echo $community_address_file already exists
-  exit 1
-fi
-
-if [[ -f $foundation_address_file ]]; then
-  echo $foundation_address_file already exists
-  exit 1
-fi
-
-stake_account_data_file=STAKE_account_data.json
-if [[ ! -f $stake_account_data_file ]]; then
-  echo "$stake_account_data_file does not exist.  Querying cluster for data"
-  query_program_account_data STAKE $STAKE_PROGRAM_PUBKEY $url
-fi
-
-# Community pool
-shrill_charity="BzuqQFnu7oNUeok9ZoJezpqu2vZJU7XR1PxVLkk6wwUD"
-legal_gate="FwMbkDZUb78aiMWhZY4BEroAcqmnrXZV77nwrg71C57d"
-cluttered_complaint="4h1rt2ic4AXwG7p3Qqhw57EMDD4c3tLYb5J3QstGA2p5"
-one_thanks="3b7akieYUyCgz3Cwt5sTSErMWjg8NEygD6mbGjhGkduB"
-
-# Foundation pool
-lyrical_supermarket="GRZwoJGisLTszcxtWpeREJ98EGg8pZewhbtcrikoU7b3"
-frequent_description="J51tinoLdmEdUR27LUVymrb2LB3xQo1aSHSgmbSGdj58"
-
-pubkey_list="$(cat $stake_account_data_file | jq -r '.result | .[] | .[0]')"
-
-for key in ${pubkey_list[@]}; do
-  staker="$(solana show-stake-account $key | grep staker | cut -f3 -d " ")"
-
-  case $staker in
-    $shrill_charity)
-      echo "shrill charity $key" >> "$community_address_file"
-      ;;
-    $legal_gate)
-      echo "legal gate $key" >> "$community_address_file"
-      ;;
-    $cluttered_complaint)
-      echo "cluttered complaint $key" >> "$community_address_file"
-      ;;
-    $one_thanks)
-      echo "one thanks $key" >> "$community_address_file"
-      ;;
-    $lyrical_supermarket)
-      echo "lyrical_supermarket $key" >> "$foundation_address_file"
-      ;;
-    $frequent_description)
-      echo "frequent_description $key" >> "$foundation_address_file"
-      ;;
-    esac
+while [[ -n $1 ]]; do
+  if [[ ${1:0:2} = -- ]]; then
+    if [[ $1 = --url ]]; then
+      url="$2"
+      shift 2
+    elif [[ $1 = --pubkey ]]; then
+      filter_pubkey="$2"
+      shift 2
+    else
+      usage "Unknown option: $1"
+    fi
+  else
+    usage "Unknown option: $1"
+  fi
 done
+
+[[ -n $filter_pubkey ]] || usage
+
+stake_account_json_file=STAKE_account_data.json
+stake_account_csv_file=STAKE_account_data.csv
+if [[ ! -f $stake_account_json_file ]]; then
+  echo "$stake_account_json_file does not exist.  Querying cluster for data"
+  get_program_accounts STAKE $STAKE_PROGRAM_PUBKEY $url
+  write_account_data_csv STAKE
+fi
+
+rm "$stake_account_csv_file"
+cat "$stake_account_json_file" | jq -r '(.result | .[]) | [.[0], (.[1] | .lamports)] | @csv' >> $stake_account_csv_file
+
+num_stake_accounts=0
+stake_account_balance_total=0
+
+echo "Searching cluster stake accounts for authorized staker: $filter_pubkey"
+date
+while IFS=, read -r account_pubkey lamports ; do
+  account_pubkey=$(echo $account_pubkey | tr -d '"')
+  staker="$(solana show-stake-account $account_pubkey | grep staker | cut -f3 -d " ")"
+  if [[ "$staker" == "$filter_pubkey" ]] ; then
+    stake_account_balance_total=$((stake_account_balance_total + $lamports))
+    num_stake_accounts=$((num_stake_accounts + 1))
+
+    printf "Stake account address: %s, Balance: %'.d lamports\n" $account_pubkey $lamports
+  fi
+done < "$stake_account_csv_file"
+
+date
+
+echo "Totals"
+printf "Number of stake accounts: %'.d\n" $num_stake_accounts
+printf "Total balance across all accounts: %'.d lamports\n" $stake_account_balance_total
