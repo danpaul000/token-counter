@@ -14,8 +14,13 @@ usage() {
   fi
   cat <<EOF
 usage: $0 [cluster_rpc_url] [identity_pubkey]
+
+ Report the account addresses, balances and lockups of all stake accounts
+ for which a given key is the authorized staker.
+ Also report the system account balance for that same key.
+
  Required arguments:
-   cluster_rpc_url  - RPC URL and port for a running Solana cluster (ex: http://34.82.17.66/:8899)
+   cluster_rpc_url  - RPC URL and port for a running Solana cluster (ex: http://34.83.146.144:8899)
    identity_pubkey  - Base58 pubkey that is an authorized staker for at least one stake account on the cluster.
 EOF
   exit $exitcode
@@ -37,7 +42,7 @@ function parse_stake_account_data_to_file {
   staker="$(echo "$account_data" | grep -i 'authorized staker' | cut -f3 -d " ")"
   lockup_epoch="$(echo "$account_data" | grep -i 'lockup epoch' | cut -f3 -d " ")"
   if [[ "$staker" == "$filter_key" ]] ; then
-    echo STAKE, $account_key, $lamports, $lockup_epoch >> $csvfile
+    echo STAKE,$account_key,$lamports,$lockup_epoch >> $csvfile
   fi
 }
 

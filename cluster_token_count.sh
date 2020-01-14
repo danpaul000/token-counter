@@ -2,15 +2,31 @@
 
 source get_program_accounts.sh
 
-# SLP1 RPC Node
-#url=http://34.82.79.31:8899
+usage() {
+  exitcode=0
+  if [[ -n "$1" ]]; then
+    exitcode=1
+    echo "Error: $*"
+  fi
+  cat <<EOF
+usage: $0 [cluster_rpc_url]
 
-# Dan's test Node
-url=http://34.82.15.82:8899
+ Report total token distribution of a running cluster owned by the following programs:
+   STAKE
+   SYSTEM
+   VOTE
+   STORAGE
+   CONFIG
 
-if [[ -n $1 ]]; then
-  url="$1"
-fi
+ Required arguments:
+   cluster_rpc_url  - RPC URL and port for a running Solana cluster (ex: http://34.83.146.144:8899)
+EOF
+  exit $exitcode
+}
+
+url=$1
+[[ -n $url ]] || usage
+shift
 
 LAMPORTS_PER_SOL=1000000000 # 1 billion
 TOTAL_ALLOWED_SOL=500000000 # 500 million
@@ -43,8 +59,8 @@ function get_token_capitalization {
 
   if [[ -z $quiet ]]; then
     printf "\n--- Token Capitalization ---\n"
-    printf "Total token capitalization %s SOL\n" "$totalSupplySol"
-    printf "Total token capitalization %s Lamports\n" "$totalSupplyLamports"
+    printf "Total token capitalization %'d SOL\n" "$totalSupplySol"
+    printf "Total token capitalization %'d Lamports\n" "$totalSupplyLamports"
   fi
 
   tokenCapitalizationLamports="$totalSupplyLamports"
@@ -71,8 +87,8 @@ function get_program_account_balance_totals {
   if [[ -z $quiet ]]; then
     printf "\n--- %s Account Balance Totals ---\n" "$PROGRAM_NAME"
     printf "Number of %s Program accounts: %'.f\n" "$PROGRAM_NAME" "$numberOfAccounts"
-    printf "Total token balance in all %s accounts: %s SOL\n" "$PROGRAM_NAME" "$totalAccountBalancesSol"
-    printf "Total token balance in all %s accounts: %s Lamports\n" "$PROGRAM_NAME" "$totalAccountBalancesLamports"
+    printf "Total token balance in all %s accounts: %'d SOL\n" "$PROGRAM_NAME" "$totalAccountBalancesSol"
+    printf "Total token balance in all %s accounts: %'d Lamports\n" "$PROGRAM_NAME" "$totalAccountBalancesLamports"
   fi
 
   case $PROGRAM_NAME in
@@ -103,24 +119,13 @@ function get_program_account_balance_totals {
   esac
 }
 
-function test_sum_account_balances_capitalization {
-  printf "\n--- Testing Token Capitalization vs Account Balances ---\n"
+function sum_account_balances_totals {
   grandTotalAccountBalancesSol=$((systemAccountBalanceTotalSol + stakeAccountBalanceTotalSol + voteAccountBalanceTotalSol + storageAccountBalanceTotalSol + configAccountBalanceTotalSol))
-  printf "Total SOL in Token Capitalization: %s\n" "$tokenCapitalizationSol"
-  printf "Total SOL in all Account Balances: %s\n" "$grandTotalAccountBalancesSol"
-
-  if [[ "$grandTotalAccountBalancesSol" !=  "$tokenCapitalizationSol" ]]; then
-    printf "ERROR: Difference between Capitalization and Account Balance Sum is %'.f SOL\n\n" "$((tokenCapitalizationSol - grandTotalAccountBalancesSol))"
-  fi
-
   grandTotalAccountBalancesLamports=$((systemAccountBalanceTotalLamports + stakeAccountBalanceTotalLamports + voteAccountBalanceTotalLamports + storageAccountBalanceTotalLamports + configAccountBalanceTotalLamports))
-  printf "Total Lamports in Token Capitalization: %s\n" "$tokenCapitalizationLamports"
-  printf "Total Lamports in all Account Balances: %s\n" "$grandTotalAccountBalancesLamports"
 
-  if [[ "$grandTotalAccountBalancesLamports" !=  "$tokenCapitalizationLamports" ]]; then
-    printf "ERROR: Difference between Capitalization and Account Balance Sum is %s Lamports\n\n" "$((tokenCapitalizationLamports - grandTotalAccountBalancesLamports))"
-  fi
-
+  printf "\n--- Total Token Distribution in all Account Balances ---\n"
+  printf "Total SOL in all Account Balances: %'d\n" "$grandTotalAccountBalancesSol"
+  printf "Total Lamports in all Account Balances: %'d\n" "$grandTotalAccountBalancesLamports"
 }
 
 echo "--- Querying RPC URL: $url ---"
@@ -146,4 +151,4 @@ get_program_account_balance_totals VOTE #quiet
 get_program_account_balance_totals STORAGE #quiet
 get_program_account_balance_totals CONFIG #quiet
 
-test_sum_account_balances_capitalization
+sum_account_balances_totals
