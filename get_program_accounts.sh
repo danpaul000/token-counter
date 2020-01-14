@@ -16,13 +16,12 @@ function get_program_accounts {
   else
     JSON_OUTFILE="${PROGRAM_NAME}_account_data.json"
   fi
-
   curl -s -X POST -H "Content-Type: application/json" -d \
     '{"jsonrpc":"2.0","id":1, "method":"getProgramAccounts", "params":["'$PROGRAM_PUBKEY'"]}' $URL | jq '.' \
     > $JSON_OUTFILE
 }
 
-function write_account_data_csv {
+function write_program_account_data_csv {
   PROGRAM_NAME="$1"
   if [[ -n "$2" ]] ; then
     JSON_INFILE="$2"
@@ -38,4 +37,18 @@ function write_account_data_csv {
   echo "Account_Pubkey,Lamports" > $CSV_OUTFILE
   cat "$JSON_INFILE" | jq -r '(.result | .[]) | [.[0], (.[1] | .lamports)] | @csv' \
     >> $CSV_OUTFILE
+}
+
+function get_account_info {
+  ACCOUNT_PUBKEY="$1"
+  URL="$2"
+
+  if [[ -n "$3" ]] ; then
+    JSON_OUTFILE="$3"
+  else
+    JSON_OUTFILE="${ACCOUNT_PUBKEY}_account_info.json"
+  fi
+  curl -s -X POST -H "Content-Type: application/json" -d \
+    '{"jsonrpc":"2.0","id":1, "method":"getAccountInfo", "params":["'$ACCOUNT_PUBKEY'"]}' $URL | jq '.' \
+    > $JSON_OUTFILE
 }

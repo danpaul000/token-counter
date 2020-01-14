@@ -132,11 +132,11 @@ get_program_accounts VOTE $VOTE_PROGRAM_PUBKEY $url
 get_program_accounts STORAGE $STORAGE_PROGRAM_PUBKEY $url
 get_program_accounts CONFIG $CONFIG_PROGRAM_PUBKEY $url
 
-write_account_data_csv STAKE
-write_account_data_csv SYSTEM
-write_account_data_csv VOTE
-write_account_data_csv STORAGE
-write_account_data_csv CONFIG
+write_program_account_data_csv STAKE
+write_program_account_data_csv SYSTEM
+write_program_account_data_csv VOTE
+write_program_account_data_csv STORAGE
+write_program_account_data_csv CONFIG
 
 get_token_capitalization #quiet
 
