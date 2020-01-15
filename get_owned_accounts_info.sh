@@ -91,20 +91,28 @@ function display_results_summary {
   echo "--------------------------------------------------------------------------------------"
 }
 
+function display_results_details {
+  cat $results_file | column -t -s,
+}
+
 [[ -n $filter_pubkey ]] || usage
 results_file=accounts_owned_by_${filter_pubkey}.csv
 system_account_json_file=system_account_${filter_pubkey}.json
-
-echo "Getting all stake program accounts"
-get_program_accounts STAKE $STAKE_PROGRAM_PUBKEY $url $all_stake_accounts_json_file
-write_program_account_data_csv STAKE $all_stake_accounts_json_file $all_stake_accounts_csv_file
 
 echo "Program,Account_Pubkey,Lamports,Lockup_Epoch" > $results_file
 
 echo "Getting system account data"
 get_account_info $filter_pubkey $url $system_account_json_file
 system_account_balance="$(cat "$system_account_json_file" | jq -r '(.result | .value | .lamports)')"
-echo SYSTEM, $filter_pubkey, $system_account_balance, N/A >> $results_file
+if [[ "$system_account_balance" == "null" ]]; then
+  echo "The provided pubkey is not found in the system program: $filter_pubkey"
+  exit 1
+fi
+echo SYSTEM,$filter_pubkey,$system_account_balance,N/A >> $results_file
+
+echo "Getting all stake program accounts"
+get_program_accounts STAKE $STAKE_PROGRAM_PUBKEY $url $all_stake_accounts_json_file
+write_program_account_data_csv STAKE $all_stake_accounts_json_file $all_stake_accounts_csv_file
 
 echo "Querying cluster at $url for stake accounts with authorized staker: $filter_pubkey"
 last_tick=$SECONDS
@@ -122,4 +130,5 @@ done
 wait
 printf "\n"
 
+display_results_details
 display_results_summary
