@@ -35,7 +35,7 @@ function write_program_account_data_csv {
   fi
 
   echo "Account_Pubkey,Lamports" > $CSV_OUTFILE
-  cat "$JSON_INFILE" | jq -r '(.result | .[]) | [.[0], (.[1] | .lamports)] | @csv' \
+  cat "$JSON_INFILE" | jq -r '(.result | .[]) | [.pubkey, (.account | .lamports)] | @csv' \
     >> $CSV_OUTFILE
 }
 
